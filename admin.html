@@ -11,6 +11,8 @@
 <link rel="apple-touch-icon" href="/icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <style>
 :root{
   --green:#0ECB81;--green-dk:#0BB574;--green-lt:#E7F9F1;
@@ -103,7 +105,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans
   font-variant-numeric:tabular-nums;transition:.15s;}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,144,255,.1);}
 .field .hint{font-size:11px;color:var(--text3);margin-top:5px;line-height:1.5;}
-.field .xpub-mono{font-family:'Courier New',monospace;font-size:11px;letter-spacing:.2px;}
 .field textarea{resize:vertical;min-height:60px;}
 
 .table-wrap{overflow-x:auto;}
@@ -125,14 +126,6 @@ tr:hover td{background:#FAFBFC;}
 .user-email{font-size:11.5px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .user-uid{font-size:10.5px;color:var(--text3);margin-top:2px;font-family:'Courier New',monospace;}
 
-.amt-big{font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums;}
-.amt-sub{font-size:10.5px;color:var(--text3);font-weight:400;margin-top:2px;}
-.addr-pill{font-family:'Courier New',monospace;font-size:11px;background:#F5F6F8;
-  padding:4px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
-  color:var(--text2);max-width:180px;}
-.addr-pill:hover{background:#E8EBF0;color:var(--text);}
-.addr-pill .copy-mini{color:var(--green-dk);font-size:10px;font-weight:700;}
-
 .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid;
   font-weight:600;line-height:1.6;}
 .tag.green{background:var(--green-lt);border-color:var(--green);color:#0a9e63;}
@@ -141,11 +134,11 @@ tr:hover td{background:#FAFBFC;}
 .tag.red{background:var(--red-lt);border-color:var(--red);color:var(--red);}
 .tag.purple{background:var(--purple-lt);border-color:var(--purple);color:var(--purple);}
 .tag.gray{background:#F5F6F8;border-color:var(--line);color:var(--text2);}
-.tag.dark{background:#1E2329;border-color:#1E2329;color:#fff;}
 
 .warn{background:#FFF8E6;border:1px solid #FFE9A8;border-radius:8px;padding:12px 16px;
   font-size:12.5px;color:#7A5C00;line-height:1.6;margin-bottom:16px;}
-.warn b{color:#5C4500;}
+.warn.info{background:var(--blue-lt);border-color:#91CAFF;color:#0958D9;}
+.warn.err{background:var(--red-lt);border-color:#FFA39E;color:#a8071a;}
 
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
   display:none;align-items:center;justify-content:center;z-index:2000;padding:20px;}
@@ -160,40 +153,48 @@ tr:hover td{background:#FAFBFC;}
 .modal-foot{display:flex;gap:10px;padding:14px 22px 20px;border-top:1px solid var(--line);}
 .modal-foot .btn{flex:1;justify-content:center;padding:11px;}
 
-.qr-box{width:180px;height:180px;background:#fff;border:2px solid var(--line);border-radius:12px;
-  margin:12px auto;padding:12px;display:flex;align-items:center;justify-content:center;}
-.qr-box canvas{width:100%;height:100%;}
-
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
-.info-box{background:#F9FAFB;border-radius:8px;padding:12px 14px;}
-.info-box .k{font-size:11px;color:var(--text2);margin-bottom:3px;}
-.info-box .v{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;}
-
-.kyc-img-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;}
-.kyc-img{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#F9FAFB;aspect-ratio:1/1;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
-.kyc-img img{width:100%;height:100%;object-fit:cover;}
-.kyc-img .lbl{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:#fff;
-  font-size:10px;padding:3px 6px;text-align:center;font-weight:600;}
-.kyc-img .missing{color:var(--text3);font-size:11px;}
-
 .ct-item{background:#F9FAFB;border-radius:8px;padding:12px 14px;margin-bottom:10px;
   display:flex;align-items:flex-start;gap:12px;}
 .ct-item .ic{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0ECB81,#1890ff);
   color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:14px;}
 .ct-item .body{flex:1;min-width:0;}
-.ct-item .trader{font-size:13px;font-weight:700;}
+.ct-item .trader{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .ct-item .sym{font-size:12px;font-weight:600;color:var(--text2);margin-top:2px;}
 .ct-item .msg{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.5;}
 .ct-item .meta{font-size:10.5px;color:var(--text3);margin-top:6px;}
 .ct-item .parts{font-size:11px;color:var(--blue);font-weight:700;margin-top:6px;cursor:pointer;display:inline-block;}
 .ct-item .parts:hover{text-decoration:underline;}
-.ct-item .rm{color:var(--red);cursor:pointer;font-size:11px;font-weight:700;flex-shrink:0;}
+.ct-item .rm{color:var(--red);cursor:pointer;font-size:11px;font-weight:700;flex-shrink:0;padding:2px 4px;}
+.ct-item .rm:hover{text-decoration:underline;}
+
+.code-pill{display:inline-block;font-family:'Courier New',monospace;font-weight:800;
+  letter-spacing:3px;font-size:13px;background:#1E2329;color:#fff;padding:3px 10px;border-radius:5px;}
 
 #toast{position:fixed;bottom:30px;left:50%;transform:translate(-50%,20px);
   background:rgba(30,35,41,.96);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;
   opacity:0;transition:.25s;pointer-events:none;z-index:3000;border:1px solid rgba(14,203,129,.3);}
 #toast.on{opacity:1;transform:translate(-50%,0);}
+
+/* Login screen */
+.login-wrap{position:fixed;inset:0;background:linear-gradient(135deg,#0B0E11,#101820);
+  display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
+.login-card{background:#fff;border-radius:16px;width:100%;max-width:400px;padding:32px;
+  box-shadow:0 30px 80px rgba(0,0,0,.5);}
+.login-card .lg{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;margin-bottom:8px;color:#1E2329;}
+.login-card .lg .mk{width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,#0ECB81,#1890ff);display:flex;align-items:center;
+  justify-content:center;font-size:16px;font-weight:900;color:#04160f;}
+.login-card .sub{font-size:13px;color:#707A8A;margin-bottom:24px;line-height:1.5;}
+.login-card label{display:block;font-size:12.5px;color:#1E2329;font-weight:600;margin-bottom:6px;}
+.login-card input{width:100%;border:1.5px solid #EAECEF;border-radius:10px;padding:13px 15px;
+  font-size:14px;font-family:inherit;outline:none;transition:.15s;margin-bottom:14px;}
+.login-card input:focus{border-color:#0ECB81;box-shadow:0 0 0 3px rgba(14,203,129,.12);}
+.login-card button{width:100%;height:48px;border-radius:10px;background:#0ECB81;color:#fff;
+  font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:.15s;}
+.login-card button:hover{background:#0BB574;}
+.login-card button:disabled{background:#EAECEF;color:#B7BDC6;cursor:not-allowed;}
+.login-card .err{color:#F6465D;font-size:12px;margin-top:10px;display:none;}
+.login-card .err.show{display:block;}
 
 @media(max-width:1100px){.stats-grid,.wallet-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:820px){.sidebar{width:60px;}
@@ -201,13 +202,26 @@ tr:hover td{background:#FAFBFC;}
   .sidebar .item{justify-content:center;padding:14px 0;}
   .stats-grid,.wallet-grid{grid-template-columns:1fr;}
   .content{padding:16px;}
-  .info-grid{grid-template-columns:1fr;}
-  .kyc-img-grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
-<div class="layout">
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="lg"><div class="mk">N</div>NextTrade Admin</div>
+    <div class="sub">Sign in with your admin account to manage the platform.</div>
+    <label>Email</label>
+    <input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="username">
+    <label>Password</label>
+    <input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+    <button id="loginBtn" onclick="doLogin()">Sign In</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<div class="layout" id="appLayout" style="display:none;">
 
 <aside class="sidebar">
   <div class="logo"><div class="mk">N</div><span>NextTrade Admin</span></div>
@@ -226,28 +240,14 @@ tr:hover td{background:#FAFBFC;}
       <span>XPUB Config</span>
     </div>
     <div class="item" data-panel="userwallets">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 20c1.2-3.5 4-5.2 7-5.2s5.8 1.7 7 5.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="19" cy="14" r="2.5" stroke="currentColor" stroke-width="1.8"/></svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 20c1.2-3.5 4-5.2 7-5.2s5.8 1.7 7 5.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       <span>User Wallets</span>
       <span class="badge" id="userWalletsBadge">0</span>
     </div>
-    <div class="item" data-panel="wallets">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 7h18v12H3zM3 11h18" stroke="currentColor" stroke-width="1.8"/></svg>
-      <span>Hot / Cold Wallets</span>
-    </div>
-    <div class="item" data-panel="deposits">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 4v12M7 11l5 5 5-5M4 20h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Deposits</span>
-      <span class="badge" id="depBadge">0</span>
-    </div>
-    <div class="item" data-panel="sweeps">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M14 8l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Manual Sweeps</span>
-      <span class="badge" id="sweepBadge">0</span>
-    </div>
-    <div class="item" data-panel="withdrawals">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 20V8M7 13l5-5 5 5M4 4h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Withdrawals</span>
-      <span class="badge" id="wdBadge">0</span>
+    <div class="item" data-panel="kyc">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span>KYC Queue</span>
+      <span class="badge" id="kycBadge">0</span>
     </div>
   </div>
 
@@ -255,21 +255,8 @@ tr:hover td{background:#FAFBFC;}
     <div class="group-title">Trading</div>
     <div class="item" data-panel="copytrade">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 10a6 6 0 1112 0v4l1.5 2.5h-15L6 14v-4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-      <span>Copy Trade Alerts</span>
+      <span>Copy Trade Signals</span>
       <span class="badge" id="ctBadge">0</span>
-    </div>
-    <div class="item" data-panel="orders">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <span>Orders</span>
-    </div>
-  </div>
-
-  <div class="group">
-    <div class="group-title">Members</div>
-    <div class="item" data-panel="kyc">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" stroke="currentColor" stroke-width="1.8"/></svg>
-      <span>KYC Queue</span>
-      <span class="badge" id="kycBadge">0</span>
     </div>
   </div>
 
@@ -292,6 +279,9 @@ tr:hover td{background:#FAFBFC;}
     <div class="topicon" title="Refresh" onclick="location.reload()">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </div>
+    <div class="topicon" title="Sign out" onclick="doLogout()" style="margin-left:4px;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M15 12H3M7 8l-4 4 4 4M12 3h7a2 2 0 012 2v14a2 2 0 01-2 2h-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
     <div class="topicon"><div class="av"></div></div>
   </div>
 
@@ -299,35 +289,8 @@ tr:hover td{background:#FAFBFC;}
 
     <!-- DASHBOARD -->
     <div class="panel on" id="panel-dashboard">
-      <div class="warn">
-        <b>POC Wallet System.</b> This admin derives per-user deposit addresses from your XPUBs and builds unsigned sweep transactions. XPUBs stay in your browser only.
-      </div>
-
-      <div class="wallet-grid">
-        <div class="wallet-card master">
-          <div class="wlabel">Master (XPUB Source)</div>
-          <div class="wbal" id="stat-master">—</div>
-          <div class="waddr" id="stat-master-addr">No XPUB configured</div>
-          <svg class="wicon" width="60" height="60" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" stroke="#fff" stroke-width="1.5"/></svg>
-        </div>
-        <div class="wallet-card hot">
-          <div class="wlabel">Hot Wallet</div>
-          <div class="wbal" id="stat-hot">0.00 ETH</div>
-          <div class="waddr" id="stat-hot-addr">Not configured</div>
-          <svg class="wicon" width="60" height="60" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" stroke="#fff" stroke-width="1.5"/></svg>
-        </div>
-        <div class="wallet-card warm">
-          <div class="wlabel">Warm Wallet</div>
-          <div class="wbal" id="stat-warm">0.00 ETH</div>
-          <div class="waddr" id="stat-warm-addr">Not configured</div>
-          <svg class="wicon" width="60" height="60" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M12 4v16" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </div>
-        <div class="wallet-card cold">
-          <div class="wlabel">Cold Storage</div>
-          <div class="wbal" id="stat-cold">0.00 ETH</div>
-          <div class="waddr" id="stat-cold-addr">Not configured</div>
-          <svg class="wicon" width="60" height="60" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="12" r="2" stroke="#fff" stroke-width="1.5"/></svg>
-        </div>
+      <div class="warn info">
+        <b>Supabase connected.</b> All signals, participants, and profits are stored in the cloud. Users see your posts on any device.
       </div>
 
       <div class="stats-grid">
@@ -336,29 +299,24 @@ tr:hover td{background:#FAFBFC;}
           <div><div class="k">Total Users</div><div class="v" id="stat-users">0</div></div>
         </div>
         <div class="stat">
-          <div class="ic b"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 4v12M7 11l5 5 5-5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <div><div class="k">Pending Deposits</div><div class="v" id="stat-pending-deps">0</div></div>
+          <div class="ic b"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 10a6 6 0 1112 0v4l1.5 2.5h-15L6 14v-4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
+          <div><div class="k">Active Signals</div><div class="v" id="stat-signals">0</div></div>
         </div>
         <div class="stat">
           <div class="ic o"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M14 8l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <div><div class="k">Pending Sweeps</div><div class="v" id="stat-pending-sweeps">0</div></div>
+          <div><div class="k">Participants</div><div class="v" id="stat-participants">0</div></div>
         </div>
         <div class="stat">
-          <div class="ic r"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17v.1M10.3 3.8L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.8a2 2 0 00-3.4 0z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
-          <div><div class="k">Total Swept</div><div class="v" id="stat-total-swept">0</div></div>
+          <div class="ic r"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div><div class="k">Profit Paid Out</div><div class="v" id="stat-profit">$0</div></div>
         </div>
       </div>
 
       <div class="card">
-        <h2>Quick Start</h2>
-        <div class="sub">Set up the wallet system in five steps.</div>
-        <ol style="font-size:13px;line-height:2;color:var(--text2);padding-left:20px;margin:0;">
-          <li>Go to <b>XPUB Config</b> and paste your ETH extended public key.</li>
-          <li>Set your <b>Hot Wallet</b> address — where user deposits sweep to.</li>
-          <li>Open the App and sign up — your user is auto-provisioned a unique address.</li>
-          <li>Check <b>User Wallets</b> to see every user, their address, and their balance.</li>
-          <li>Use <b>Deposits</b> to detect incoming funds, then build a sweep.</li>
-        </ol>
+        <h2>Connected Account</h2>
+        <div class="sub">You are signed in as the admin.</div>
+        <div style="font-size:14px;font-weight:700;" id="adminEmailDisplay">—</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:6px;">Only this email can post signals.</div>
       </div>
     </div>
 
@@ -366,33 +324,11 @@ tr:hover td{background:#FAFBFC;}
     <div class="panel" id="panel-userwallets">
       <div class="card">
         <h2>User Wallets <span class="tag blue" id="uwCount">0 users</span></h2>
-        <div class="sub">
-          Every user's unique deposit address, derived from your XPUB at their personal index.
-          The "On-chain balance" column reads the actual blockchain; "Ledger balance" is what the user sees in the app.
-        </div>
-
-        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-          <button class="btn primary" onclick="refreshAllBalances()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            Refresh On-chain Balances
-          </button>
-          <button class="btn" onclick="navTo('deposits')">View Deposits</button>
-          <button class="btn" onclick="exportUserWallets()">Export CSV</button>
-        </div>
-
+        <div class="sub">Every user signed up through the app. Wallet features below are read-only until you wire them to Supabase tables.</div>
         <div class="table-wrap">
-          <table style="min-width:1200px;">
+          <table>
             <thead>
-              <tr>
-                <th style="width:60px">Index</th>
-                <th>User</th>
-                <th>Deposit Address</th>
-                <th class="right">On-chain</th>
-                <th class="right">Ledger</th>
-                <th class="right">Deposits</th>
-                <th>Sweep Status</th>
-                <th class="right">Actions</th>
-              </tr>
+              <tr><th>User</th><th>KYC Status</th><th>Joined</th></tr>
             </thead>
             <tbody id="userWalletsTable"></tbody>
           </table>
@@ -400,275 +336,83 @@ tr:hover td{background:#FAFBFC;}
       </div>
     </div>
 
-    <!-- XPUB CONFIG -->
-    <div class="panel" id="panel-xpubs">
-      <div class="warn">
-        <b>Where to get an XPUB:</b> MetaMask and Trust Wallet do not export XPUBs. Use Trezor Suite (Account → Details → Show Public Key) or Ian Coleman's BIP39 tool offline. For ETH (BIP44) export at path <b>m/44'/60'/0'</b>.
-      </div>
-
-      <div class="card">
-        <h2>Extended Public Keys</h2>
-        <div class="sub">Public keys only — cannot spend funds, only generate addresses.</div>
-
-        <div class="field">
-          <label>ETH XPUB (for USDT/USDC ERC-20 addresses)</label>
-          <textarea id="ethXpub" class="xpub-mono" rows="3" placeholder="xpub6..."></textarea>
-          <div class="hint">BIP44 account-level XPUB at m/44'/60'/0'. Derives all user deposit addresses.</div>
-        </div>
-
-        <div class="field">
-          <label>BTC XPUB / ZPUB (optional, for native SegWit BTC)</label>
-          <textarea id="btcXpub" class="xpub-mono" rows="2" placeholder="zpub6..."></textarea>
-        </div>
-
-        <div class="field">
-          <label>Hot Wallet Address (sweep destination)</label>
-          <input id="hotWallet" class="xpub-mono" placeholder="0x...">
-        </div>
-
-        <div class="field">
-          <label>Warm Wallet Address (optional)</label>
-          <input id="warmWallet" class="xpub-mono" placeholder="0x...">
-        </div>
-
-        <div class="field">
-          <label>Cold Wallet Address (optional)</label>
-          <input id="coldWallet" class="xpub-mono" placeholder="0x...">
-        </div>
-
-        <button class="btn primary" onclick="saveXpubConfig()">Save Configuration</button>
-        <button class="btn" onclick="testDerivation()" style="margin-left:10px;">Test Derivation</button>
-      </div>
-
-      <div class="card" id="derivationTestCard" style="display:none;">
-        <h2>Derivation Test</h2>
-        <div class="sub">First five addresses generated from your XPUB.</div>
-        <div id="derivationPreview" style="font-family:'Courier New',monospace;font-size:11.5px;line-height:2;"></div>
-      </div>
-    </div>
-
-    <!-- HOT/COLD WALLETS -->
-    <div class="panel" id="panel-wallets">
-      <div class="card">
-        <h2>Hot / Cold Wallet Architecture</h2>
-        <div class="sub">Funds flow: user deposit addresses → hot wallet for daily ops → cold storage for security.</div>
-
-        <div class="wallet-grid" style="margin-top:16px;">
-          <div class="wallet-card hot">
-            <div class="wlabel">🔥 Hot Wallet</div>
-            <div class="wbal" id="hot-bal-2">0.00 ETH</div>
-            <div class="waddr" id="hot-addr-2">Configure in XPUB Config</div>
-          </div>
-          <div class="wallet-card warm">
-            <div class="wlabel">🌤 Warm Wallet</div>
-            <div class="wbal" id="warm-bal-2">0.00 ETH</div>
-            <div class="waddr" id="warm-addr-2">Not set</div>
-          </div>
-          <div class="wallet-card cold">
-            <div class="wlabel">❄ Cold Storage</div>
-            <div class="wbal" id="cold-bal-2">0.00 ETH</div>
-            <div class="waddr" id="cold-addr-2">Not set</div>
-          </div>
-        </div>
-
-        <div style="font-size:12.5px;line-height:1.9;color:var(--text2);margin-top:20px;">
-          <b style="color:var(--text);">Production flow:</b><br>
-          1. User deposits to unique address derived from your XPUB<br>
-          2. Detect deposit and approve in Deposits panel<br>
-          3. Build sweep → sign with hardware wallet → broadcast<br>
-          4. When hot wallet exceeds threshold, move excess to cold storage<br>
-          5. When hot wallet runs low, refill from cold with multi-sig approval
-        </div>
-      </div>
-    </div>
-
-    <!-- DEPOSITS -->
-    <div class="panel" id="panel-deposits">
-      <div class="card">
-        <h2>Detected Deposits</h2>
-        <div class="sub">Polls Etherscan for incoming transactions to user addresses. In production you'd use webhooks from a custody provider.</div>
-        <div style="margin-bottom:16px;display:flex;gap:10px;">
-          <button class="btn primary" onclick="scanAllDeposits()">Scan All Users</button>
-          <button class="btn" onclick="clearDeposits()">Clear</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Asset</th>
-                <th>From</th>
-                <th class="right">Amount</th>
-                <th>Tx Hash</th>
-                <th>Status</th>
-                <th class="right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="depositsTable">
-              <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:40px;">No deposits detected yet</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- SWEEPS -->
-    <div class="panel" id="panel-sweeps">
-      <div class="card">
-        <h2>Manual Sweeps</h2>
-        <div class="sub">Unsigned transactions you sign yourself. MetaMask for testnet, hardware wallet for real funds.</div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>User</th>
-                <th>From</th>
-                <th>To</th>
-                <th class="right">Amount</th>
-                <th>Status</th>
-                <th class="right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="sweepsTable">
-              <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:40px;">No sweeps yet</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- WITHDRAWALS -->
-    <div class="panel" id="panel-withdrawals">
-      <div class="card">
-        <h2>Withdrawal Requests</h2>
-        <div class="sub">Requests from users to send funds out. These are debited from the user's ledger balance and paid from the hot wallet.</div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Asset</th>
-                <th>To Address</th>
-                <th class="right">Amount</th>
-                <th>Requested</th>
-                <th>Status</th>
-                <th class="right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="withdrawalsTable">
-              <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:40px;">No withdrawal requests yet</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- COPY TRADE ALERTS -->
-    <div class="panel" id="panel-copytrade">
-      <div class="card">
-        <h2>Push Copy Trade Alert</h2>
-        <div class="sub">Send a copy-trade notification to users. They'll see it in the app's Copy Trading panel and get a red dot on the bell icon.</div>
-
-        <div class="field">
-          <label>Trader name</label>
-          <input id="ctTrader" type="text" value="Brian" placeholder="Brian">
-          <div class="hint">Name shown to users as the signal sender.</div>
-        </div>
-
-        <div class="field">
-          <label>Instrument</label>
-          <select id="ctSymbol">
-            <optgroup label="Crypto">
-              <option value="BTC">BTC / USDT — Bitcoin</option>
-              <option value="ETH">ETH / USDT — Ethereum</option>
-              <option value="SOL">SOL / USDT — Solana</option>
-              <option value="XRP">XRP / USDT — XRP</option>
-              <option value="BNB">BNB / USDT — BNB</option>
-              <option value="DOGE">DOGE / USDT — Dogecoin</option>
-            </optgroup>
-            <optgroup label="Forex">
-              <option value="EURUSD">EUR/USD</option>
-              <option value="GBPUSD">GBP/USD</option>
-              <option value="USDJPY">USD/JPY</option>
-            </optgroup>
-            <optgroup label="Commodities">
-              <option value="XAUUSD">XAU/USD — Gold</option>
-              <option value="WTI">WTI — Crude Oil</option>
-              <option value="XAGUSD">XAG/USD — Silver</option>
-            </optgroup>
-            <optgroup label="Stocks">
-              <option value="AAPL">AAPL — Apple</option>
-              <option value="TSLA">TSLA — Tesla</option>
-              <option value="NVDA">NVDA — NVIDIA</option>
-            </optgroup>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>Message</label>
-          <textarea id="ctMessage" rows="3" placeholder="e.g. Strong buy setup on BTC — recommend copying now."></textarea>
-          <div class="hint">This message appears in the user's Copy Trading panel.</div>
-        </div>
-
-        <div class="field">
-          <label>Push to</label>
-          <select id="ctTarget">
-            <option value="all">All users</option>
-          </select>
-        </div>
-
-        <button class="btn primary" onclick="pushCopyTrade()">Send Alert</button>
-      </div>
-
-      <div class="card">
-        <h2>Sent Alerts <span class="tag purple" id="ctCount">0</span></h2>
-        <div class="sub">Alerts currently visible in the app. Delete to retract.</div>
-        <div id="ctList"></div>
-      </div>
-    </div>
-
     <!-- KYC -->
     <div class="panel" id="panel-kyc">
       <div class="card">
         <h2>KYC Submissions</h2>
-        <div class="sub">Users who submitted identity verification through the app. Click a row to view full submission and approve/reject.</div>
+        <div class="sub">Users who submitted identity verification. Approve or reject.</div>
         <div class="table-wrap">
           <table>
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Status</th>
-                <th>Submitted</th>
-                <th class="right">Actions</th>
-              </tr>
-            </thead>
+            <thead><tr><th>User</th><th>Status</th><th class="right">Actions</th></tr></thead>
             <tbody id="kycTable"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- ORDERS -->
-    <div class="panel" id="panel-orders">
+    <!-- COPY TRADE SIGNALS -->
+    <div class="panel" id="panel-copytrade">
       <div class="card">
-        <h2>Order Management</h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>User</th>
-                <th>Pair</th>
-                <th>Side</th>
-                <th class="right">Price</th>
-                <th class="right">Qty</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="ordersTable"></tbody>
-          </table>
+        <h2>Post Copy Trade Signal</h2>
+        <div class="sub">Users see this as a yellow "Copy" card on their Trade screen. Tapping Copy opens the Follow sheet where they enter the code.</div>
+
+        <div class="field">
+          <label>Analyst / Trader name</label>
+          <input id="ctTrader" type="text" value="Borsaciselim" placeholder="Borsaciselim">
         </div>
+
+        <div class="field">
+          <label>Instrument</label>
+          <select id="ctSymbol">
+            <option value="BTC">BTC / USDT — Bitcoin</option>
+            <option value="ETH">ETH / USDT — Ethereum</option>
+            <option value="SOL">SOL / USDT — Solana</option>
+            <option value="XRP">XRP / USDT — XRP</option>
+            <option value="BNB">BNB / USDT — BNB</option>
+            <option value="DOGE">DOGE / USDT — Dogecoin</option>
+            <option value="XAUUSD" selected>XAU/USD — Gold</option>
+            <option value="EURUSD">EUR/USD</option>
+            <option value="AAPL">AAPL — Apple</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Signal Code (4 digits)</label>
+          <input id="ctCode" type="text" inputmode="numeric" maxlength="4" placeholder="e.g. 7733" style="font-family:'Courier New',monospace;font-size:18px;letter-spacing:6px;font-weight:800;">
+          <div class="hint">Users must type this exact code to unlock Copy.</div>
+        </div>
+
+        <div class="field">
+          <label>Message shown to users</label>
+          <textarea id="ctMessage" rows="3" placeholder="e.g. XAU strong buy setup — copy now."></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+          <div class="field"><label>Suggested amount (USD)</label><input id="ctAmount" value="100"></div>
+          <div class="field"><label>Suggested SL %</label><input id="ctSl" value="2"></div>
+          <div class="field"><label>Suggested TP %</label><input id="ctTp" value="4"></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="field"><label>30D PnL (USD)</label><input id="ctPnl" value="3277.10"></div>
+          <div class="field"><label>30D ROI %</label><input id="ctRoi" value="16.98"></div>
+        </div>
+
+        <div class="field"><label>Followers display (e.g. 32/300)</label><input id="ctFollowers" value="32/300"></div>
+
+        <div class="field">
+          <label>Expires in (minutes)</label>
+          <input id="ctExpiry" type="text" inputmode="numeric" value="30">
+        </div>
+
+        <button class="btn primary" onclick="pushCopyTrade()">Post Signal</button>
+        <button class="btn" onclick="clearExpiredSignals()" style="margin-left:10px;">Clear Expired</button>
+      </div>
+
+      <div class="card">
+        <h2>Active Signals <span class="tag purple" id="ctCount">0</span></h2>
+        <div class="sub">Signals currently visible on users' Trade screens. Delete to retract.</div>
+        <div id="ctList"></div>
       </div>
     </div>
 
@@ -676,17 +420,11 @@ tr:hover td{background:#FAFBFC;}
     <div class="panel" id="panel-settings">
       <div class="card">
         <h2>System Settings</h2>
-        <div class="field">
-          <label>Etherscan API Key</label>
-          <input id="etherscanKey" placeholder="Optional — for higher rate limits">
-          <div class="hint">Get a free key at etherscan.io.</div>
+        <div class="sub">Configuration lives in <code style="background:#F5F6F8;padding:2px 6px;border-radius:4px;font-size:11px;">supabase-config.js</code>. Edit that file to change the admin email or profit percentage.</div>
+        <div class="warn info">
+          <b>Signed in as:</b> <span id="settingsEmail">—</span>
         </div>
-        <div class="field">
-          <label>RPC URL</label>
-          <input id="rpcUrl" value="https://eth.llamarpc.com">
-        </div>
-        <button class="btn primary" onclick="saveSettings()">Save Settings</button>
-        <button class="btn danger" onclick="resetAll()" style="margin-left:10px;">Reset All Data</button>
+        <button class="btn danger" onclick="doLogout()">Sign Out</button>
       </div>
     </div>
 
@@ -696,10 +434,7 @@ tr:hover td{background:#FAFBFC;}
 
 <div class="modal-bg" id="modal">
   <div class="modal">
-    <div class="modal-head">
-      <h3 id="modalTitle">Title</h3>
-      <div class="x" onclick="closeModal()">✕</div>
-    </div>
+    <div class="modal-head"><h3 id="modalTitle">Title</h3><div class="x" onclick="closeModal()">✕</div></div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-foot" id="modalFoot"></div>
   </div>
@@ -708,636 +443,244 @@ tr:hover td{background:#FAFBFC;}
 <div id="toast"></div>
 
 <script>
-const STORAGE_KEY = 'nexttrade_admin_wallet_v1';
-const APPS_KEY = 'nexttrade_accounts_v1';
-const COPY_KEY = 'nexttrade_copytrade_v1';
-const PARTS_KEY = 'nexttrade_copytrade_participants_v1';
+/* ============================================================
+   INIT SUPABASE
+   ============================================================ */
+const cfg = window.NT_CONFIG || {};
+const sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 
-const defaultState = {
-  config: { ethXpub:'', btcXpub:'', hotWallet:'', warmWallet:'', coldWallet:'',
-            etherscanKey:'', rpcUrl:'https://eth.llamarpc.com' },
-  clients: [], deposits: [], sweeps: [], withdrawals: [],
-  orders: [
-    {id:'ORD-100231', user:'Alice', pair:'BTC/USDT', side:'Buy', price:77845, qty:0.025, status:'filled'},
-    {id:'ORD-100230', user:'Bob',   pair:'ETH/USDT', side:'Buy', price:2446, qty:1.2, status:'filled'},
-    {id:'ORD-100229', user:'Charlie',pair:'SOL/USDT',side:'Sell',price:101.5,qty:5,  status:'open'},
-  ]
-};
-let state = JSON.parse(JSON.stringify(defaultState));
-try {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if(raw){
-    const parsed = JSON.parse(raw);
-    Object.keys(defaultState).forEach(k => {
-      if(parsed[k] !== undefined && parsed[k] !== null) state[k] = parsed[k];
-    });
+let adminUser = null;
+let signals = [];
+let participantsBySignal = {};
+let realtimeChannel = null;
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginErr');
+  err.classList.remove('show');
+
+  if(!email || !password){ err.textContent = 'Enter email and password'; err.classList.add('show'); return; }
+
+  btn.disabled = true; btn.textContent = 'Signing in...';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+  btn.disabled = false; btn.textContent = 'Sign In';
+
+  if(error){ err.textContent = error.message; err.classList.add('show'); return; }
+  if(data.user.email !== cfg.ADMIN_EMAIL){
+    err.textContent = 'This account is not the admin account.';
+    err.classList.add('show');
+    await sb.auth.signOut();
+    return;
   }
-} catch(e){}
-function saveState(){
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+  adminUser = data.user;
+  showApp();
 }
 
-function getAccounts(){
-  try { return JSON.parse(localStorage.getItem(APPS_KEY) || '{}'); } catch(e){ return {}; }
-}
-function saveAccounts(accs){
-  try { localStorage.setItem(APPS_KEY, JSON.stringify(accs)); } catch(e){}
-}
-function getParticipants(){
-  try { return JSON.parse(localStorage.getItem(PARTS_KEY) || '{}'); } catch(e){ return {}; }
+async function doLogout(){
+  await sb.auth.signOut();
+  adminUser = null;
+  if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+  document.getElementById('appLayout').style.display = 'none';
+  document.getElementById('loginWrap').style.display = 'flex';
 }
 
-function deriveEthAddress(xpub, index){
-  try {
-    if(!xpub || typeof ethers === 'undefined') return null;
-    const hd = ethers.HDNodeWallet.fromExtendedKey(xpub);
-    return hd.deriveChild(index).address;
-  } catch(e){ return null; }
-}
-function validateXpub(xpub){
-  if(!xpub) return false;
-  try { ethers.HDNodeWallet.fromExtendedKey(xpub); return true; }
-  catch(e){ return false; }
+function showApp(){
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('appLayout').style.display = 'flex';
+  document.getElementById('adminEmailDisplay').textContent = adminUser.email;
+  document.getElementById('settingsEmail').textContent = adminUser.email;
+  refreshAll();
+  subscribeRealtime();
 }
 
+/* ============================================================
+   NAV
+   ============================================================ */
 const PANEL_TITLES = {
-  dashboard:'Dashboard', xpubs:'XPUB Config', userwallets:'User Wallets',
-  wallets:'Hot / Cold Wallets', deposits:'Deposits', sweeps:'Manual Sweeps',
-  withdrawals:'Withdrawals', kyc:'KYC Queue', orders:'Orders',
-  copytrade:'Copy Trade Alerts', settings:'Settings'
+  dashboard:'Dashboard', userwallets:'User Wallets', kyc:'KYC Queue',
+  copytrade:'Copy Trade Signals', settings:'Settings'
 };
 document.querySelectorAll('.item').forEach(it => {
-  it.addEventListener('click', () => {
-    if(!it.dataset.panel) return;
-    navTo(it.dataset.panel);
-  });
+  it.addEventListener('click', () => { if(it.dataset.panel) navTo(it.dataset.panel); });
 });
 function navTo(panel){
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-  document.getElementById('panel-' + panel).classList.add('on');
+  const el = document.getElementById('panel-' + panel);
+  if(el) el.classList.add('on');
   document.querySelectorAll('.item').forEach(i => i.classList.toggle('on', i.dataset.panel === panel));
   document.getElementById('crumb').innerHTML = 'Dashboard / <b>' + (PANEL_TITLES[panel] || panel) + '</b>';
   window.scrollTo({top:0});
   if(panel === 'userwallets') renderUserWallets();
   if(panel === 'kyc') renderKyc();
-  if(panel === 'deposits') renderDeposits();
-  if(panel === 'sweeps') renderSweeps();
-  if(panel === 'withdrawals') renderWithdrawals();
-  if(panel === 'orders') renderOrders();
   if(panel === 'copytrade') renderCopyTradePanel();
-  if(panel === 'dashboard') updateDashboard();
-  if(panel === 'xpubs') loadXpubConfig();
-  if(panel === 'wallets') updateWallets();
 }
 
-function loadXpubConfig(){
-  document.getElementById('ethXpub').value = state.config.ethXpub || '';
-  document.getElementById('btcXpub').value = state.config.btcXpub || '';
-  document.getElementById('hotWallet').value = state.config.hotWallet || '';
-  document.getElementById('warmWallet').value = state.config.warmWallet || '';
-  document.getElementById('coldWallet').value = state.config.coldWallet || '';
-}
-function saveXpubConfig(){
-  const ethXpub = document.getElementById('ethXpub').value.trim();
-  const btcXpub = document.getElementById('btcXpub').value.trim();
-  if(ethXpub && !validateXpub(ethXpub)) return toast('Invalid ETH XPUB format');
-  if(btcXpub && !validateXpub(btcXpub)) return toast('Invalid BTC XPUB format');
-
-  state.config.ethXpub = ethXpub;
-  state.config.btcXpub = btcXpub;
-  state.config.hotWallet = document.getElementById('hotWallet').value.trim();
-  state.config.warmWallet = document.getElementById('warmWallet').value.trim();
-  state.config.coldWallet = document.getElementById('coldWallet').value.trim();
-
-  state.clients.forEach(c => {
-    if(state.config.ethXpub) c.addresses.eth = deriveEthAddress(state.config.ethXpub, c.derivationIndex);
-  });
-  saveState();
-  toast('Configuration saved');
-  updateDashboard();
-  updateWallets();
-  renderUserWallets();
-}
-function testDerivation(){
-  if(!state.config.ethXpub) return toast('Add an ETH XPUB first');
-  if(!validateXpub(state.config.ethXpub)) return toast('Invalid XPUB');
-  const preview = document.getElementById('derivationPreview');
-  const card = document.getElementById('derivationTestCard');
-  card.style.display = 'block';
-  let html = '<b>ETH addresses (m/44\'/60\'/0\'/0/index):</b><br><br>';
-  for(let i = 0; i < 5; i++){
-    const addr = deriveEthAddress(state.config.ethXpub, i);
-    html += `index ${i}: <span style="color:var(--blue);">${addr || 'error'}</span><br>`;
-  }
-  preview.innerHTML = html;
-}
-
-let filterQuery = '';
-function syncClientsFromAccounts(){
-  const accounts = getAccounts();
-  const existing = new Set((state.clients || []).map(c => (c.email || '').toLowerCase()));
-  let changed = false;
-  Object.values(accounts).forEach(acc => {
-    const email = (acc.email || '').toLowerCase();
-    if(!email) return;
-    if(existing.has(email)) return;
-    const used = state.clients.map(c => c.derivationIndex);
-    let nextIndex = 0;
-    while(used.includes(nextIndex)) nextIndex++;
-    const client = {
-      id: 'c' + Date.now() + Math.random().toString(36).slice(2,6),
-      name: acc.username, email: email, uid: acc.uid, derivationIndex: nextIndex,
-      addresses: {}, internalBalance: acc.balance || 0, createdAt: acc.createdAt || Date.now()
-    };
-    if(state.config.ethXpub) client.addresses.eth = deriveEthAddress(state.config.ethXpub, nextIndex);
-    state.clients.push(client);
-    changed = true;
-  });
-  if(changed){ saveState(); }
-}
-syncClientsFromAccounts();
-
-function getUserDepositTotal(clientId){
-  return state.deposits.filter(d => d.clientId === clientId).reduce((sum, d) => sum + parseFloat(d.amount || 0), 0);
-}
-function getSweepStatusFor(clientId){
-  const userSweeps = state.sweeps.filter(s => s.clientId === clientId);
-  if(!userSweeps.length) return {status:'none', label:'—'};
-  const pending = userSweeps.filter(s => s.status === 'pending_approval');
-  if(pending.length) return {status:'pending', label:'Pending sweep'};
-  const broadcast = userSweeps.filter(s => s.status === 'broadcast');
-  if(broadcast.length) return {status:'swept', label:'Swept to hot'};
-  return {status:'none', label:'—'};
-}
-function renderUserWallets(){
-  syncClientsFromAccounts();
-  const tbody = document.getElementById('userWalletsTable');
-  const accounts = getAccounts();
-  let list = state.clients.map(c => {
-    const acc = Object.values(accounts).find(a => (a.email || '').toLowerCase() === (c.email || '').toLowerCase());
-    return {
-      ...c,
-      email: c.email || (acc ? acc.email : ''),
-      uid: c.uid || (acc ? acc.uid : ''),
-      internalBalance: acc ? (acc.balance || 0) : (c.internalBalance || 0),
-    };
-  });
-  if(filterQuery){
-    const q = filterQuery.toLowerCase();
-    list = list.filter(c =>
-      (c.name || '').toLowerCase().includes(q) ||
-      (c.email || '').toLowerCase().includes(q) ||
-      (c.uid || '').toLowerCase().includes(q) ||
-      (c.addresses.eth || '').toLowerCase().includes(q)
-    );
-  }
-  document.getElementById('uwCount').textContent = list.length + ' user' + (list.length === 1 ? '' : 's');
-  document.getElementById('userWalletsBadge').textContent = state.clients.length;
-  document.getElementById('stat-users').textContent = state.clients.length;
-  if(!list.length){
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:60px;">No users yet. Register a user in the app to see them here.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = list.map(c => {
-    const sweep = getSweepStatusFor(c.id);
-    const depTotal = getUserDepositTotal(c.id);
-    const addr = c.addresses.eth;
-    const addrShort = addr ? addr.slice(0, 10) + '…' + addr.slice(-6) : null;
-    return `
-      <tr>
-        <td><span class="tag gray">#${c.derivationIndex}</span></td>
-        <td>
-          <div class="user-cell">
-            <div class="user-av${c.name ? '' : ' empty'}">${(c.name || '?')[0].toUpperCase()}</div>
-            <div class="user-info">
-              <div class="user-name">${c.name || '—'}</div>
-              <div class="user-email">${c.email || '—'}</div>
-              <div class="user-uid">${c.uid || '—'}</div>
-            </div>
-          </div>
-        </td>
-        <td>
-          ${addr ? `<div class="addr-pill" onclick="copyText('${addr}')" title="${addr}"><span class="mono">${addrShort}</span><span class="copy-mini">COPY</span></div>` : '<span style="color:var(--text3);font-size:11px;">No XPUB configured</span>'}
-        </td>
-        <td class="right"><div class="amt-big" id="oc-${c.id}">—</div><div class="amt-sub">ETH on-chain</div></td>
-        <td class="right"><div class="amt-big">$${c.internalBalance.toFixed(2)}</div><div class="amt-sub">app balance</div></td>
-        <td class="right"><div class="amt-big">$${depTotal.toFixed(2)}</div><div class="amt-sub">${state.deposits.filter(d => d.clientId === c.id).length} tx</div></td>
-        <td><span class="tag ${sweep.status === 'swept' ? 'green' : sweep.status === 'pending' ? 'orange' : 'gray'}">${sweep.label}</span></td>
-        <td class="right">
-          <button class="btn sm" onclick="viewUserDetail('${c.id}')">Detail</button>
-          ${addr ? `<button class="btn sm" onclick="scanUserDeposits('${c.id}')">Scan</button>` : ''}
-        </td>
-      </tr>
-    `;
-  }).join('');
-  list.forEach(c => refreshOnChainBalance(c.id));
-}
-async function refreshOnChainBalance(clientId){
-  const c = state.clients.find(x => x.id === clientId);
-  if(!c || !c.addresses.eth) return;
-  const el = document.getElementById('oc-' + clientId);
-  if(!el) return;
-  try {
-    const rpc = state.config.rpcUrl || 'https://eth.llamarpc.com';
-    const provider = new ethers.JsonRpcProvider(rpc);
-    const bal = await provider.getBalance(c.addresses.eth);
-    const eth = parseFloat(ethers.formatEther(bal));
-    if(el) el.textContent = eth.toFixed(6) + ' ETH';
-  } catch(e){ if(el) el.textContent = '—'; }
-}
-function refreshAllBalances(){ toast('Refreshing on-chain balances...'); state.clients.forEach(c => refreshOnChainBalance(c.id)); }
-function filterUserWallets(v){ filterQuery = v; renderUserWallets(); }
-function exportUserWallets(){
-  const accounts = getAccounts();
-  const rows = [['Index','Username','Email','UID','ETH Address','Internal Balance','Total Deposits']];
-  state.clients.forEach(c => {
-    const acc = Object.values(accounts).find(a => (a.email || '').toLowerCase() === (c.email || '').toLowerCase());
-    rows.push([c.derivationIndex, c.name, c.email || '', c.uid || '', c.addresses.eth || '', acc ? (acc.balance || 0) : 0, getUserDepositTotal(c.id)]);
-  });
-  const csv = rows.map(r => r.map(x => '"' + String(x).replace(/"/g,'""') + '"').join(',')).join('\n');
-  const blob = new Blob([csv], {type: 'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'nexttrade-user-wallets.csv'; a.click();
-  URL.revokeObjectURL(url);
-  toast('Exported ' + state.clients.length + ' rows');
-}
-function copyText(text){ if(navigator.clipboard) navigator.clipboard.writeText(text); toast('Copied'); }
-
-function viewUserDetail(clientId){
-  const c = state.clients.find(x => x.id === clientId);
-  if(!c) return;
-  const accounts = getAccounts();
-  const acc = Object.values(accounts).find(a => (a.email || '').toLowerCase() === (c.email || '').toLowerCase());
-  const addr = c.addresses.eth;
-  const depTotal = getUserDepositTotal(c.id);
-  const userDeposits = state.deposits.filter(d => d.clientId === c.id);
-  const userSweeps = state.sweeps.filter(s => s.clientId === c.id);
-  document.getElementById('modalTitle').textContent = c.name + ' — Wallet Detail';
-  document.getElementById('modalBody').innerHTML = `
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
-      <div class="user-av" style="width:56px;height:56px;font-size:22px;">${(c.name || '?')[0].toUpperCase()}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:17px;font-weight:800;">${c.name}</div>
-        <div style="font-size:12.5px;color:var(--text2);margin-top:3px;">${c.email || 'No email'}</div>
-        <div style="font-size:11.5px;color:var(--text3);margin-top:3px;font-family:'Courier New',monospace;">${c.uid || 'No UID'}</div>
-      </div>
-    </div>
-    ${addr ? `
-      <div style="text-align:center;background:#F9FAFB;border-radius:12px;padding:16px;">
-        <div class="qr-box"><canvas id="modalQr"></canvas></div>
-        <div style="font-family:'Courier New',monospace;font-size:11.5px;background:#fff;padding:10px 14px;border-radius:8px;word-break:break-all;margin-top:10px;border:1px solid var(--line);">${addr}</div>
-        <button class="btn primary" style="margin-top:10px;" onclick="copyText('${addr}')">Copy Address</button>
-        <div style="font-size:11px;color:var(--text3);margin-top:12px;line-height:1.6;">Derivation path: m/44'/60'/0'/0/${c.derivationIndex}</div>
-      </div>
-    ` : '<div class="warn">No address yet — configure the ETH XPUB first.</div>'}
-    <div class="info-grid">
-      <div class="info-box"><div class="k">App Ledger Balance</div><div class="v">$${acc ? (acc.balance || 0).toFixed(2) : '0.00'}</div></div>
-      <div class="info-box"><div class="k">Total Deposited</div><div class="v">$${depTotal.toFixed(2)}</div></div>
-      <div class="info-box"><div class="k">Deposit Count</div><div class="v">${userDeposits.length}</div></div>
-      <div class="info-box"><div class="k">Sweeps</div><div class="v">${userSweeps.length}</div></div>
-      <div class="info-box"><div class="k">Index</div><div class="v">#${c.derivationIndex}</div></div>
-      <div class="info-box"><div class="k">KYC</div><div class="v" style="font-size:13px;color:${(acc && acc.kycStatus === 'verified') ? 'var(--green)' : (acc && acc.kycStatus === 'pending') ? 'var(--orange)' : 'var(--red)'};">${(acc && acc.kycStatus) || 'none'}</div></div>
-    </div>
-  `;
-  document.getElementById('modalFoot').innerHTML = `
-    <button class="btn" onclick="closeModal()">Close</button>
-    ${addr ? `<button class="btn primary" onclick="scanUserDeposits('${c.id}'); closeModal();">Scan Deposits</button>` : ''}
-    ${addr ? `<button class="btn success" onclick="buildSweep('${c.id}'); closeModal();">Build Sweep</button>` : ''}
-  `;
-  document.getElementById('modal').classList.add('on');
-  if(addr) setTimeout(() => drawQR(addr, document.getElementById('modalQr')), 50);
-}
-function scanUserDeposits(clientId){
-  const c = state.clients.find(x => x.id === clientId);
-  if(!c || !c.addresses.eth) return toast('No ETH address for this user');
-  return scanClientDeposits(clientId);
-}
-async function scanClientDeposits(clientId){
-  const c = state.clients.find(x => x.id === clientId);
-  if(!c || !c.addresses.eth) return;
-  toast('Scanning Etherscan for ' + c.name + '...');
-  try {
-    const key = state.config.etherscanKey || '';
-    const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${c.addresses.eth}&sort=desc&apikey=${key}`;
-    const r = await fetch(url);
-    const data = await r.json();
-    if(data.status === '1' && Array.isArray(data.result)){
-      const incoming = data.result.filter(tx => tx.to && tx.to.toLowerCase() === c.addresses.eth.toLowerCase());
-      if(!incoming.length) return toast('No deposits for ' + c.name);
-      let added = 0;
-      incoming.forEach(tx => {
-        if(state.deposits.find(d => d.txHash === tx.hash)) return;
-        state.deposits.push({
-          id: 'd' + Date.now() + Math.random().toString(36).slice(2,6),
-          clientId: c.id, clientName: c.name, clientEmail: c.email || '',
-          asset: 'ETH', from: tx.from,
-          amount: (parseInt(tx.value) / 1e18).toFixed(6),
-          txHash: tx.hash, status: 'detected', time: parseInt(tx.timeStamp) * 1000
-        });
-        added++;
-      });
-      saveState(); renderDeposits(); renderUserWallets(); updateDashboard();
-      toast(`Found ${added} new deposit(s)`);
-    } else toast('Etherscan returned no data');
-  } catch(e){ toast('Scan failed: ' + e.message); }
-}
-async function scanAllDeposits(){
-  if(!state.clients.length) return toast('No users to scan');
-  for(const c of state.clients){
-    if(c.addresses.eth){ await scanClientDeposits(c.id); await new Promise(r => setTimeout(r, 500)); }
-  }
-}
-function clearDeposits(){
-  if(!confirm('Clear all detected deposits?')) return;
-  state.deposits = []; saveState(); renderDeposits(); renderUserWallets(); updateDashboard();
-}
-function renderDeposits(){
-  const tbody = document.getElementById('depositsTable');
-  const pending = state.deposits.filter(d => d.status === 'detected').length;
-  document.getElementById('depBadge').textContent = pending;
-  document.getElementById('stat-pending-deps').textContent = pending;
-  if(!state.deposits.length){
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:40px;">No deposits detected yet</td></tr>';
-    return;
-  }
-  tbody.innerHTML = state.deposits.map(d => `
-    <tr>
-      <td><b>${d.clientName}</b><div class="user-email">${d.clientEmail || ''}</div></td>
-      <td><span class="tag blue">${d.asset}</span></td>
-      <td class="mono">${d.from.slice(0,10)}…${d.from.slice(-6)}</td>
-      <td class="right"><b>${d.amount}</b></td>
-      <td class="mono">${d.txHash.slice(0,10)}…</td>
-      <td><span class="tag ${d.status === 'detected' ? 'orange' : 'green'}">${d.status}</span></td>
-      <td class="right">${d.status === 'detected' ? `<button class="btn sm success" onclick="approveDeposit('${d.id}')">Approve &amp; Sweep</button>` : '—'}</td>
-    </tr>
-  `).join('');
-}
-function approveDeposit(depositId){
-  const d = state.deposits.find(x => x.id === depositId);
-  if(!d) return;
-  const accounts = getAccounts();
-  const acc = Object.values(accounts).find(a => (a.email || '').toLowerCase() === (d.clientEmail || '').toLowerCase());
-  if(acc){ acc.balance = (acc.balance || 0) + parseFloat(d.amount); accounts[acc.email] = acc; saveAccounts(accounts); }
-  d.status = 'approved'; saveState();
-  renderDeposits(); renderUserWallets(); updateDashboard();
-  buildSweep(d.clientId, d);
-}
-function buildSweep(clientId, deposit){
-  const c = state.clients.find(x => x.id === clientId);
-  if(!c) return toast('Client not found');
-  if(!c.addresses.eth) return toast('No ETH address');
-  if(!state.config.hotWallet) return toast('Set hot wallet first');
-  const sweep = {
-    id: 's' + Date.now() + Math.random().toString(36).slice(2,6),
-    clientId: c.id, clientName: c.name, clientEmail: c.email || '',
-    from: c.addresses.eth, to: state.config.hotWallet,
-    asset: 'ETH',
-    amount: deposit ? deposit.amount : '0.000000',
-    status: 'pending_approval', createdAt: Date.now()
-  };
-  state.sweeps.push(sweep); saveState();
-  renderSweeps(); renderUserWallets(); updateDashboard();
-  showSweepModal(sweep);
-}
-function showSweepModal(sweep){
-  const c = state.clients.find(x => x.id === sweep.clientId);
-  document.getElementById('modalTitle').textContent = 'Sign Sweep — ' + sweep.clientName;
-  document.getElementById('modalBody').innerHTML = `
-    <div class="warn" style="margin-bottom:16px;"><b>Manual signing required.</b> Sign this transaction with a wallet that controls the from-address private key.</div>
-    <div class="field"><label>From (user address)</label><input readonly class="mono" value="${sweep.from}"></div>
-    <div class="field"><label>To (hot wallet)</label><input readonly class="mono" value="${sweep.to}"></div>
-    <div class="field"><label>Amount</label><input readonly value="${sweep.amount} ETH"></div>
-    <div class="warn" style="background:#E6F4FF;border-color:#91CAFF;color:#0958D9;">
-      <b>How to sign:</b><br>
-      1. In Ian Coleman's tool, find index <b>${c ? c.derivationIndex : '—'}</b> and copy the private key<br>
-      2. Import into MetaMask<br>
-      3. Send <b>${sweep.amount} ETH</b> to the hot wallet address<br>
-      4. Paste the resulting transaction hash below
-    </div>
-    <div class="field"><label>Broadcast Tx Hash (optional)</label><input id="broadcastHash" placeholder="0x..." class="mono"></div>
-  `;
-  document.getElementById('modalFoot').innerHTML = `
-    <button class="btn" onclick="closeModal()">Cancel</button>
-    <button class="btn success" onclick="markBroadcast('${sweep.id}')">Mark as Broadcast</button>
-  `;
-  document.getElementById('modal').classList.add('on');
-}
-function markBroadcast(sweepId){
-  const s = state.sweeps.find(x => x.id === sweepId);
-  if(!s) return;
-  s.status = 'broadcast'; s.txHash = document.getElementById('broadcastHash').value.trim() || null; s.broadcastAt = Date.now();
-  saveState(); closeModal(); renderSweeps(); renderUserWallets(); updateDashboard();
-  toast('Sweep marked as broadcast');
-}
-function renderSweeps(){
-  const tbody = document.getElementById('sweepsTable');
-  const pending = state.sweeps.filter(s => s.status === 'pending_approval').length;
-  document.getElementById('sweepBadge').textContent = pending;
-  document.getElementById('stat-pending-sweeps').textContent = pending;
-  if(!state.sweeps.length){
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:40px;">No sweeps yet</td></tr>';
-    return;
-  }
-  tbody.innerHTML = state.sweeps.map(s => `
-    <tr>
-      <td class="mono">${s.id.slice(0,10)}</td>
-      <td><b>${s.clientName}</b></td>
-      <td class="mono">${s.from.slice(0,10)}…</td>
-      <td class="mono">${s.to.slice(0,10)}…</td>
-      <td class="right"><b>${s.amount}</b> ${s.asset}</td>
-      <td><span class="tag ${s.status === 'broadcast' ? 'green' : 'orange'}">${s.status}</span></td>
-      <td class="right">${s.status === 'pending_approval' ? `<button class="btn sm" onclick="resumeSweep('${s.id}')">Sign</button>` : (s.txHash ? `<a href="https://etherscan.io/tx/${s.txHash}" target="_blank" class="btn sm">View Tx</a>` : '—')}</td>
-    </tr>
-  `).join('');
-}
-function resumeSweep(id){ const s = state.sweeps.find(x => x.id === id); if(s) showSweepModal(s); }
-
-function renderWithdrawals(){
-  const tbody = document.getElementById('withdrawalsTable');
-  const pending = state.withdrawals.filter(w => w.status === 'pending').length;
-  document.getElementById('wdBadge').textContent = pending;
-  if(!state.withdrawals.length){
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:40px;">No withdrawal requests yet</td></tr>';
-    return;
-  }
-  tbody.innerHTML = state.withdrawals.map(w => `
-    <tr>
-      <td><b>${w.user}</b><div class="user-email">${w.email || ''}</div></td>
-      <td><span class="tag blue">${w.asset}</span></td>
-      <td class="mono">${w.to.slice(0,10)}…${w.to.slice(-6)}</td>
-      <td class="right"><b>${w.amount}</b></td>
-      <td>${new Date(w.time).toLocaleString()}</td>
-      <td><span class="tag ${w.status === 'pending' ? 'orange' : w.status === 'paid' ? 'green' : 'red'}">${w.status}</span></td>
-      <td class="right">${w.status === 'pending' ? `<button class="btn sm success" onclick="markPaid('${w.id}')">Mark Paid</button><button class="btn sm danger" onclick="rejectWithdrawal('${w.id}')">Reject</button>` : '—'}</td>
-    </tr>
-  `).join('');
-}
-function markPaid(id){ const w = state.withdrawals.find(x => x.id === id); if(!w) return; w.status = 'paid'; saveState(); renderWithdrawals(); toast('Withdrawal marked as paid'); }
-function rejectWithdrawal(id){
-  const w = state.withdrawals.find(x => x.id === id); if(!w) return;
-  w.status = 'rejected';
-  const accounts = getAccounts();
-  const acc = Object.values(accounts).find(a => (a.email || '').toLowerCase() === (w.email || '').toLowerCase());
-  if(acc){ acc.balance = (acc.balance || 0) + w.amount; accounts[acc.email] = acc; saveAccounts(accounts); }
-  saveState(); renderWithdrawals(); toast('Withdrawal rejected and refunded');
-}
-
-function renderKyc(){
-  const accounts = getAccounts();
-  const users = Object.values(accounts);
-  const tbody = document.getElementById('kycTable');
-  document.getElementById('kycBadge').textContent = users.filter(u => u.kycStatus === 'pending').length;
-  const target = document.getElementById('ctTarget');
-  if(target){
-    target.innerHTML = '<option value="all">All users</option>' +
-      users.map(u => `<option value="${u.email}">${u.username} — ${u.email}</option>`).join('');
-  }
-  if(!users.length){
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:40px;">No users yet.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = users.map(u => `
-    <tr style="cursor:pointer;" onclick="openKycDetail('${u.email}')">
-      <td><div class="user-cell">
-        <div class="user-av">${(u.username || '?')[0].toUpperCase()}</div>
-        <div class="user-info">
-          <div class="user-name">${u.username}</div>
-          <div class="user-email">${u.email}</div>
-          <div class="user-uid">${u.uid || ''}</div>
-        </div>
-      </div></td>
-      <td><span class="tag ${u.kycStatus === 'verified' ? 'green' : u.kycStatus === 'pending' ? 'orange' : u.kycStatus === 'rejected' ? 'red' : 'gray'}">${u.kycStatus || 'none'}</span></td>
-      <td>${u.kycData && u.kycData.submittedAt ? new Date(u.kycData.submittedAt).toLocaleString() : '—'}</td>
-      <td class="right" onclick="event.stopPropagation()">
-        ${u.kycStatus === 'pending' ? `<button class="btn sm" onclick="openKycDetail('${u.email}')">Review</button><button class="btn sm success" onclick="approveKyc('${u.email}')">Approve</button><button class="btn sm danger" onclick="rejectKyc('${u.email}')">Reject</button>` : `<button class="btn sm" onclick="openKycDetail('${u.email}')">View</button>`}
-      </td>
-    </tr>
-  `).join('');
-}
-function openKycDetail(email){
-  const accounts = getAccounts();
-  const u = accounts[email];
-  if(!u) return toast('User not found');
-  const kd = u.kycData || {};
-  const status = u.kycStatus || 'none';
-  const statusTag = status === 'verified' ? 'green' : status === 'pending' ? 'orange' : status === 'rejected' ? 'red' : 'gray';
-  document.getElementById('modalTitle').textContent = 'KYC — ' + u.username;
-  document.getElementById('modalBody').innerHTML = `
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-      <div class="user-av" style="width:52px;height:52px;font-size:20px;">${(u.username || '?')[0].toUpperCase()}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:16px;font-weight:800;">${u.username}</div>
-        <div style="font-size:12.5px;color:var(--text2);margin-top:3px;">${u.email}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:'Courier New',monospace;">${u.uid || ''}</div>
-      </div>
-      <span class="tag ${statusTag}">${status}</span>
-    </div>
-    ${status === 'none' ? '<div class="warn">This user has not submitted a KYC application yet.</div>' : `
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Submitted Details</div>
-      <div class="info-grid" style="margin-top:0;">
-        <div class="info-box"><div class="k">Full Legal Name</div><div class="v">${kd.fullName || '—'}</div></div>
-        <div class="info-box"><div class="k">Date of Birth</div><div class="v">${kd.dob || '—'}</div></div>
-        <div class="info-box"><div class="k">Country</div><div class="v">${kd.country || '—'}</div></div>
-        <div class="info-box"><div class="k">ID Type</div><div class="v">${(kd.idType || '—').replace('_',' ')}</div></div>
-        <div class="info-box" style="grid-column:1/-1;"><div class="k">ID Number</div><div class="v">${kd.idNumber || '—'}</div></div>
-      </div>
-      <div style="font-size:13px;font-weight:700;margin:18px 0 0;">Uploaded Documents</div>
-      <div class="kyc-img-grid">
-        <div class="kyc-img" onclick="viewKycImage('${email}','front')">${kd.front ? `<img src="${kd.front}" alt="front">` : '<div class="missing">No front</div>'}<div class="lbl">ID Front</div></div>
-        <div class="kyc-img" onclick="viewKycImage('${email}','back')">${kd.back ? `<img src="${kd.back}" alt="back">` : '<div class="missing">No back</div>'}<div class="lbl">ID Back</div></div>
-        <div class="kyc-img" onclick="viewKycImage('${email}','selfie')">${kd.selfie ? `<img src="${kd.selfie}" alt="selfie">` : '<div class="missing">No selfie</div>'}<div class="lbl">Selfie</div></div>
-      </div>
-      <div style="font-size:11.5px;color:var(--text3);margin-top:14px;text-align:center;">Submitted ${kd.submittedAt ? new Date(kd.submittedAt).toLocaleString() : '—'}</div>
-    `}
-  `;
-  document.getElementById('modalFoot').innerHTML = `
-    <button class="btn" onclick="closeModal()">Close</button>
-    ${status === 'pending' || status === 'rejected' ? `<button class="btn success" onclick="approveKyc('${email}'); closeModal();">Approve KYC</button>` : ''}
-    ${status === 'pending' || status === 'verified' ? `<button class="btn danger" onclick="rejectKyc('${email}'); closeModal();">Reject</button>` : ''}
-  `;
-  document.getElementById('modal').classList.add('on');
-}
-function viewKycImage(email, slot){
-  const accounts = getAccounts();
-  const u = accounts[email];
-  if(!u || !u.kycData || !u.kycData[slot]) return toast('No image');
-  const src = u.kycData[slot];
-  const w = window.open('', '_blank');
-  if(w){
-    w.document.write('<html><head><title>KYC — ' + slot + '</title><style>body{margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh;}img{max-width:100%;max-height:100vh;}</style></head><body><img src="' + src + '"></body></html>');
-    w.document.close();
-  }
-}
-function approveKyc(email){ const accounts = getAccounts(); if(accounts[email]){ accounts[email].kycStatus = 'verified'; saveAccounts(accounts); toast('KYC approved'); renderKyc(); } }
-function rejectKyc(email){ const accounts = getAccounts(); if(accounts[email]){ accounts[email].kycStatus = 'rejected'; saveAccounts(accounts); toast('KYC rejected'); renderKyc(); } }
-
-function getCopyTrades(){ try { return JSON.parse(localStorage.getItem(COPY_KEY) || '[]'); } catch(e){ return []; } }
-function saveCopyTrades(list){ try { localStorage.setItem(COPY_KEY, JSON.stringify(list)); } catch(e){} }
-function pushCopyTrade(){
-  const traderName = (document.getElementById('ctTrader').value || 'Brian').trim() || 'Brian';
-  const sym = document.getElementById('ctSymbol').value;
-  const message = document.getElementById('ctMessage').value.trim();
-  const target = document.getElementById('ctTarget').value;
-  if(!message) return toast('Enter a message');
-  const list = getCopyTrades();
-  const alert = { id: 'ct' + Date.now() + Math.random().toString(36).slice(2,6), traderName, sym, message, target, createdAt: Date.now() };
-  list.unshift(alert); saveCopyTrades(list);
-  document.getElementById('ctMessage').value = '';
-  toast('Alert sent from ' + traderName);
+/* ============================================================
+   DATA LOADERS
+   ============================================================ */
+async function refreshAll(){
+  await Promise.all([loadSignals(), loadParticipants(), loadUsers()]);
+  updateStats();
   renderCopyTradePanel();
+  renderUserWallets();
+  renderKyc();
 }
-function deleteCopyTrade(id){
-  const list = getCopyTrades().filter(x => x.id !== id);
-  saveCopyTrades(list); renderCopyTradePanel(); toast('Alert deleted');
+
+async function loadSignals(){
+  const { data, error } = await sb.from('signals')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if(error){ console.warn('loadSignals', error); signals = []; return; }
+  signals = data || [];
 }
+
+async function loadParticipants(){
+  const { data, error } = await sb.from('participants')
+    .select('signal_id, username, uid, amount_usdt, mode, created_at')
+    .order('created_at', { ascending: false })
+    .limit(1000);
+  if(error){ console.warn('loadParticipants', error); participantsBySignal = {}; return; }
+  participantsBySignal = {};
+  (data || []).forEach(p => {
+    if(!participantsBySignal[p.signal_id]) participantsBySignal[p.signal_id] = [];
+    participantsBySignal[p.signal_id].push(p);
+  });
+}
+
+let allUsers = [];
+async function loadUsers(){
+  const { data, error } = await sb.from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(500);
+  if(error){ console.warn('loadUsers', error); allUsers = []; return; }
+  allUsers = data || [];
+  document.getElementById('userWalletsBadge').textContent = allUsers.length;
+  document.getElementById('stat-users').textContent = allUsers.length;
+}
+
+async function updateStats(){
+  const now = Date.now();
+  const active = signals.filter(s => !s.expires_at || new Date(s.expires_at).getTime() > now);
+  document.getElementById('stat-signals').textContent = active.length;
+  document.getElementById('ctBadge').textContent = active.length;
+  document.getElementById('ctCount').textContent = active.length;
+  let totalParts = 0;
+  Object.values(participantsBySignal).forEach(arr => { totalParts += arr.length; });
+  document.getElementById('stat-participants').textContent = totalParts;
+  const { data: profits } = await sb.from('copy_profits').select('profit').limit(2000);
+  const sum = (profits || []).reduce((a, b) => a + Number(b.profit || 0), 0);
+  document.getElementById('stat-profit').textContent = '$' + sum.toFixed(2);
+}
+
+/* ============================================================
+   REALTIME
+   ============================================================ */
+function subscribeRealtime(){
+  if(realtimeChannel) sb.removeChannel(realtimeChannel);
+  realtimeChannel = sb.channel('admin-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, () => {
+      loadSignals().then(() => { updateStats(); renderCopyTradePanel(); });
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, () => {
+      loadParticipants().then(() => { updateStats(); renderCopyTradePanel(); });
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+      loadUsers().then(() => { renderUserWallets(); renderKyc(); });
+    })
+    .subscribe();
+}
+
+/* ============================================================
+   COPY SIGNALS
+   ============================================================ */
+async function pushCopyTrade(){
+  const trader = (document.getElementById('ctTrader').value || 'Analyst').trim();
+  const sym = document.getElementById('ctSymbol').value;
+  const code = (document.getElementById('ctCode').value || '').trim();
+  const message = document.getElementById('ctMessage').value.trim();
+  const amount = parseFloat(document.getElementById('ctAmount').value || '100');
+  const sl = parseFloat(document.getElementById('ctSl').value || '2');
+  const tp = parseFloat(document.getElementById('ctTp').value || '4');
+  const pnl = parseFloat(document.getElementById('ctPnl').value || '0');
+  const roi = parseFloat(document.getElementById('ctRoi').value || '0');
+  const followers = document.getElementById('ctFollowers').value.trim();
+  const expiryMin = parseInt(document.getElementById('ctExpiry').value || '30', 10);
+
+  if(!/^\d{4}$/.test(code)) return toast('Code must be 4 digits');
+  if(!message) return toast('Enter a message');
+
+  const expiresAt = new Date(Date.now() + expiryMin * 60 * 1000).toISOString();
+
+  const { error } = await sb.from('signals').insert({
+    trader_name: trader, sym, code, message, amount, sl, tp, pnl, roi,
+    followers: followers || '0/0', target: 'all', expires_at: expiresAt
+  });
+
+  if(error){ toast('Error: ' + error.message); return; }
+
+  document.getElementById('ctCode').value = '';
+  document.getElementById('ctMessage').value = '';
+  toast('Signal posted — expires in ' + expiryMin + ' min');
+}
+
+async function clearExpiredSignals(){
+  const { error } = await sb.from('signals').delete().lt('expires_at', new Date().toISOString());
+  if(error) return toast('Error: ' + error.message);
+  toast('Expired signals cleared');
+}
+
+async function deleteSignal(id){
+  if(!confirm('Delete this signal?')) return;
+  const { error } = await sb.from('signals').delete().eq('id', id);
+  if(error) return toast('Error: ' + error.message);
+  toast('Deleted');
+}
+
 function renderCopyTradePanel(){
-  const list = getCopyTrades();
-  const parts = getParticipants();
-  document.getElementById('ctBadge').textContent = list.length;
-  document.getElementById('ctCount').textContent = list.length;
   const el = document.getElementById('ctList');
-  if(!list.length){
-    el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px;font-size:13px;">No alerts sent yet</div>';
+  if(!el) return;
+  const now = Date.now();
+  const active = signals.filter(s => !s.expires_at || new Date(s.expires_at).getTime() > now);
+  if(!active.length){
+    el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px;font-size:13px;">No active signals. Post one above.</div>';
     return;
   }
-  const accounts = getAccounts();
-  el.innerHTML = list.map(ct => {
-    let targetLabel = 'All users';
-    if(ct.target && ct.target !== 'all'){
-      const u = Object.values(accounts).find(a => a.email === ct.target);
-      targetLabel = u ? (u.username + ' — ' + u.email) : ct.target;
-    }
-    const trader = ct.traderName || 'Brian';
-    const initial = trader[0].toUpperCase();
-    const participants = parts[ct.id] || [];
+  el.innerHTML = active.map(ct => {
+    const participants = participantsBySignal[ct.id] || [];
+    const minsLeft = ct.expires_at ? Math.max(0, Math.ceil((new Date(ct.expires_at).getTime() - now) / 60000)) : null;
     return `
-      <div class="ct-item">
-        <div class="ic">${initial}</div>
+      <div class="ct-item" style="border-left:3px solid var(--green);">
+        <div class="ic">${(ct.trader_name || 'A')[0].toUpperCase()}</div>
         <div class="body">
-          <div class="trader">${trader}</div>
-          <div class="sym">${ct.sym}/USDT</div>
-          <div class="msg">${ct.message}</div>
-          <div class="meta">To: ${targetLabel} · ${new Date(ct.createdAt).toLocaleString()}</div>
+          <div class="trader">${ct.trader_name} <span class="tag green" style="font-size:9px;">ACTIVE</span></div>
+          <div class="sym">${ct.sym}/USDT · Code <span class="code-pill">${ct.code}</span></div>
+          <div class="msg">${ct.message || ''}</div>
+          <div class="meta">Posted ${new Date(ct.created_at).toLocaleString()}${minsLeft !== null ? ' · Expires in ' + minsLeft + ' min' : ''}</div>
           <div class="parts" onclick="openParticipants('${ct.id}')">Participants: ${participants.length}</div>
         </div>
-        <div class="rm" onclick="deleteCopyTrade('${ct.id}')">DELETE</div>
+        <div class="rm" onclick="deleteSignal('${ct.id}')">DELETE</div>
       </div>
     `;
   }).join('');
 }
-function openParticipants(alertId){
-  const parts = getParticipants()[alertId] || [];
-  const ct = getCopyTrades().find(c => c.id === alertId);
+
+function openParticipants(signalId){
+  const parts = participantsBySignal[signalId] || [];
+  const ct = signals.find(s => s.id === signalId);
   document.getElementById('modalTitle').textContent = 'Participants — ' + (ct ? ct.sym : '');
   if(!parts.length){
     document.getElementById('modalBody').innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px;">No one has copied this signal yet.</div>';
-    document.getElementById('modalFoot').innerHTML = '<button class="btn" onclick="closeModal()">Close</button>';
-    document.getElementById('modal').classList.add('on');
-    return;
-  }
-  document.getElementById('modalBody').innerHTML = `
-    <div style="font-size:12.5px;color:var(--text2);margin-bottom:12px;">Users who placed a copy trade on this signal.</div>
-    ${parts.map(p => `
+  } else {
+    document.getElementById('modalBody').innerHTML = parts.map(p => `
       <div style="display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);">
         <div class="user-av" style="width:36px;height:36px;font-size:14px;">${(p.username || '?')[0].toUpperCase()}</div>
         <div style="flex:1;min-width:0;">
@@ -1345,86 +688,98 @@ function openParticipants(alertId){
           <div style="font-size:11px;color:var(--text3);font-family:'Courier New',monospace;">${p.uid || ''}</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:13.5px;font-weight:700;">$${parseFloat(p.amountUsdt || 0).toFixed(2)}</div>
-          <div style="font-size:10.5px;color:var(--text3);"><span class="tag ${p.mode === 'demo' ? 'orange' : 'green'}" style="font-size:9px;padding:1px 5px;">${(p.mode || 'real').toUpperCase()}</span> · ${new Date(p.time).toLocaleTimeString()}</div>
+          <div style="font-size:13.5px;font-weight:700;">$${parseFloat(p.amount_usdt || 0).toFixed(2)}</div>
+          <div style="font-size:10.5px;color:var(--text3);">${(p.mode || 'real').toUpperCase()} · ${new Date(p.created_at).toLocaleTimeString()}</div>
         </div>
       </div>
-    `).join('')}
-  `;
+    `).join('');
+  }
   document.getElementById('modalFoot').innerHTML = '<button class="btn" onclick="closeModal()">Close</button>';
   document.getElementById('modal').classList.add('on');
 }
 
-function renderOrders(){
-  document.getElementById('ordersTable').innerHTML = state.orders.map(o => `
+/* ============================================================
+   USERS + KYC
+   ============================================================ */
+let filterQuery = '';
+function filterUserWallets(v){ filterQuery = v; renderUserWallets(); }
+
+function renderUserWallets(){
+  const tbody = document.getElementById('userWalletsTable');
+  if(!tbody) return;
+  let list = allUsers.slice();
+  if(filterQuery){
+    const q = filterQuery.toLowerCase();
+    list = list.filter(u =>
+      (u.username || '').toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q) ||
+      (u.uid || '').toLowerCase().includes(q)
+    );
+  }
+  document.getElementById('uwCount').textContent = list.length + ' user' + (list.length === 1 ? '' : 's');
+  if(!list.length){
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:60px;">No users yet. Register a user in the app to see them here.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(u => `
     <tr>
-      <td class="mono">${o.id}</td>
-      <td>${o.user}</td>
-      <td>${o.pair}</td>
-      <td><span class="tag ${o.side === 'Buy' ? 'green' : 'red'}">${o.side}</span></td>
-      <td class="right">$${o.price.toLocaleString()}</td>
-      <td class="right">${o.qty}</td>
-      <td><span class="tag ${o.status === 'filled' ? 'green' : 'orange'}">${o.status}</span></td>
+      <td><div class="user-cell">
+        <div class="user-av">${(u.username || '?')[0].toUpperCase()}</div>
+        <div class="user-info">
+          <div class="user-name">${u.username || '—'}</div>
+          <div class="user-email">${u.email || '—'}</div>
+          <div class="user-uid">${u.uid || ''}</div>
+        </div>
+      </div></td>
+      <td><span class="tag ${u.kyc_status === 'verified' ? 'green' : u.kyc_status === 'pending' ? 'orange' : u.kyc_status === 'rejected' ? 'red' : 'gray'}">${u.kyc_status || 'none'}</span></td>
+      <td>${u.created_at ? new Date(u.created_at).toLocaleString() : '—'}</td>
     </tr>
   `).join('');
 }
 
-function updateDashboard(){
-  syncClientsFromAccounts();
-  document.getElementById('stat-users').textContent = state.clients.length;
-  const masterEl = document.getElementById('stat-master');
-  const masterAddrEl = document.getElementById('stat-master-addr');
-  if(state.config.ethXpub){
-    masterEl.textContent = 'ETH' + (state.config.btcXpub ? ' + BTC' : '');
-    masterAddrEl.textContent = state.config.ethXpub.slice(0, 20) + '…' + state.config.ethXpub.slice(-8);
-  } else {
-    masterEl.textContent = '—'; masterAddrEl.textContent = 'No XPUB configured';
+function renderKyc(){
+  const tbody = document.getElementById('kycTable');
+  if(!tbody) return;
+  const pending = allUsers.filter(u => u.kyc_status === 'pending').length;
+  document.getElementById('kycBadge').textContent = pending;
+  if(!allUsers.length){
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:40px;">No users yet.</td></tr>';
+    return;
   }
-  document.getElementById('stat-hot-addr').textContent = state.config.hotWallet ? state.config.hotWallet.slice(0,14)+'…' : 'Not configured';
-  document.getElementById('hot-addr-2').textContent = state.config.hotWallet || 'Configure in XPUB Config';
-  document.getElementById('stat-warm-addr').textContent = state.config.warmWallet ? state.config.warmWallet.slice(0,14)+'…' : 'Not configured';
-  document.getElementById('warm-addr-2').textContent = state.config.warmWallet || 'Not set';
-  document.getElementById('stat-cold-addr').textContent = state.config.coldWallet ? state.config.coldWallet.slice(0,14)+'…' : 'Not configured';
-  document.getElementById('cold-addr-2').textContent = state.config.coldWallet || 'Not set';
-  if(state.config.hotWallet){
-    readWalletBalance(state.config.hotWallet).then(bal => {
-      document.getElementById('stat-hot').textContent = bal + ' ETH';
-      document.getElementById('hot-bal-2').textContent = bal + ' ETH';
-    }).catch(()=>{});
-  }
-  if(state.config.warmWallet){
-    readWalletBalance(state.config.warmWallet).then(bal => {
-      document.getElementById('stat-warm').textContent = bal + ' ETH';
-      document.getElementById('warm-bal-2').textContent = bal + ' ETH';
-    }).catch(()=>{});
-  }
-  if(state.config.coldWallet){
-    readWalletBalance(state.config.coldWallet).then(bal => {
-      document.getElementById('stat-cold').textContent = bal + ' ETH';
-      document.getElementById('cold-bal-2').textContent = bal + ' ETH';
-    }).catch(()=>{});
-  }
-  const totalSwept = state.sweeps.filter(s => s.status === 'broadcast').reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
-  document.getElementById('stat-total-swept').textContent = totalSwept.toFixed(4) + ' ETH';
+  tbody.innerHTML = allUsers.map(u => `
+    <tr>
+      <td><div class="user-cell">
+        <div class="user-av">${(u.username || '?')[0].toUpperCase()}</div>
+        <div class="user-info">
+          <div class="user-name">${u.username || '—'}</div>
+          <div class="user-email">${u.email || '—'}</div>
+        </div>
+      </div></td>
+      <td><span class="tag ${u.kyc_status === 'verified' ? 'green' : u.kyc_status === 'pending' ? 'orange' : u.kyc_status === 'rejected' ? 'red' : 'gray'}">${u.kyc_status || 'none'}</span></td>
+      <td class="right">
+        ${u.kyc_status === 'pending' ? `
+          <button class="btn sm success" onclick="approveKyc('${u.id}')">Approve</button>
+          <button class="btn sm danger" onclick="rejectKyc('${u.id}')">Reject</button>
+        ` : '—'}
+      </td>
+    </tr>
+  `).join('');
 }
-async function readWalletBalance(address){
-  try {
-    const provider = new ethers.JsonRpcProvider(state.config.rpcUrl || 'https://eth.llamarpc.com');
-    const bal = await provider.getBalance(address);
-    return parseFloat(ethers.formatEther(bal)).toFixed(4);
-  } catch(e){ return '0.0000'; }
-}
-function updateWallets(){ updateDashboard(); }
 
-function saveSettings(){
-  state.config.etherscanKey = document.getElementById('etherscanKey').value.trim();
-  state.config.rpcUrl = document.getElementById('rpcUrl').value.trim() || 'https://eth.llamarpc.com';
-  saveState(); toast('Settings saved');
+async function approveKyc(userId){
+  const { error } = await sb.from('profiles').update({ kyc_status: 'verified' }).eq('id', userId);
+  if(error) return toast('Error: ' + error.message);
+  toast('KYC approved');
 }
-function resetAll(){
-  if(!confirm('Reset ALL admin data?')) return;
-  state = JSON.parse(JSON.stringify(defaultState)); saveState(); location.reload();
+async function rejectKyc(userId){
+  const { error } = await sb.from('profiles').update({ kyc_status: 'rejected' }).eq('id', userId);
+  if(error) return toast('Error: ' + error.message);
+  toast('KYC rejected');
 }
+
+/* ============================================================
+   MISC
+   ============================================================ */
 function closeModal(){ document.getElementById('modal').classList.remove('on'); }
 document.getElementById('modal').addEventListener('click', e => { if(e.target.id === 'modal') closeModal(); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
@@ -1435,59 +790,31 @@ function toast(msg){
   el.textContent = msg;
   el.classList.add('on');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('on'), 2400);
+  toastTimer = setTimeout(() => el.classList.remove('on'), 2600);
 }
 
-function drawQR(text, canvas){
-  if(!canvas) return;
-  const size = 160; canvas.width = size; canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  const grid = 21; const cell = size / grid;
-  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, size, size);
-  let h = 0;
-  for(let i = 0; i < text.length; i++) h = ((h << 5) - h + text.charCodeAt(i)) | 0;
-  function finder(x, y){
-    ctx.fillStyle = '#000'; ctx.fillRect(x*cell, y*cell, 7*cell, 7*cell);
-    ctx.fillStyle = '#fff'; ctx.fillRect((x+1)*cell, (y+1)*cell, 5*cell, 5*cell);
-    ctx.fillStyle = '#000'; ctx.fillRect((x+2)*cell, (y+2)*cell, 3*cell, 3*cell);
-  }
-  finder(0, 0); finder(14, 0); finder(0, 14);
-  let seed = Math.abs(h);
-  for(let y = 0; y < grid; y++){
-    for(let x = 0; x < grid; x++){
-      if((x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12)) continue;
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      if(seed % 100 < 45){ ctx.fillStyle = '#000'; ctx.fillRect(x*cell, y*cell, cell, cell); }
-    }
-  }
-}
-
-/* Register service worker on admin too */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+/* ============================================================
+   BOOT — check for existing session
+   ============================================================ */
+(async function boot(){
+  document.getElementById('loginPassword').addEventListener('keydown', e => {
+    if(e.key === 'Enter') doLogin();
   });
-}
+  document.getElementById('loginEmail').addEventListener('keydown', e => {
+    if(e.key === 'Enter') document.getElementById('loginPassword').focus();
+  });
 
-(function boot(){
-  loadXpubConfig();
-  document.getElementById('etherscanKey').value = state.config.etherscanKey || '';
-  document.getElementById('rpcUrl').value = state.config.rpcUrl || 'https://eth.llamarpc.com';
-  syncClientsFromAccounts();
-  renderUserWallets();
-  renderKyc();
-  renderDeposits();
-  renderSweeps();
-  renderWithdrawals();
-  renderOrders();
-  renderCopyTradePanel();
-  updateDashboard();
-
-  setInterval(() => {
-    if(document.getElementById('panel-userwallets').classList.contains('on')){
-      state.clients.forEach(c => refreshOnChainBalance(c.id));
+  const { data } = await sb.auth.getSession();
+  if(data && data.session && data.session.user){
+    if(data.session.user.email === cfg.ADMIN_EMAIL){
+      adminUser = data.session.user;
+      showApp();
+      return;
+    } else {
+      await sb.auth.signOut();
     }
-  }, 30000);
+  }
+  document.getElementById('loginWrap').style.display = 'flex';
 })();
 </script>
 </body>
